@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=79.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skyreader"
+version = "0.1.0"
+description = "SkyReader: Qantas TTY Message Parser using LLMs"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    {name = "Your Name"}
+]
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "fastapi>=0.115.12",
+    "uvicorn>=0.34.2",
+    "pydantic>=2.11.3",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.1.0",
+    "openai>=1.75.0",
+]
+
+[project.urls]
+"Repository" = "https://github.com/varoonverma/skyreader.git"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5",
+    "httpx>=0.28.1",
+    "black>=25.1.0",
+    "isort>=6.0.1",
+    "mypy>=1.15.0",
+    "flake8>=7.2.0",
+]
+test = [
+    "pytest>=8.3.5",
+    "httpx>=0.28.1",
+    "pytest-cov>=6.1.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.13"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
