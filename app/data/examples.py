@@ -30,7 +30,7 @@ def load_few_shot_examples() -> List[Dict]:
                     "airline_iata": "JST",
                     "flight_number": "0430",
                     "registration": "VHVGR",
-                    "arrival_day": "10"
+                    "movement_day": "10"
                 },
                 "movement_info": {
                     "type": "AA",
@@ -59,7 +59,7 @@ def load_few_shot_examples() -> List[Dict]:
                     "airline_iata": "JST",
                     "flight_number": "0430",
                     "registration": "VHABC",
-                    "arrival_day": "31"
+                    "movement_day": "31"
                 },
                 "movement_info": {
                     "type": "AA",
@@ -90,7 +90,7 @@ def load_few_shot_examples() -> List[Dict]:
                     "airline_iata": "JQ",
                     "flight_number": "0399",
                     "registration": "BNLFM",
-                    "departure_day": "25"
+                    "movement_day": "25"
                 },
                 "movement_info": {
                     "type": "AD",
@@ -121,7 +121,7 @@ def load_few_shot_examples() -> List[Dict]:
                     "airline_iata": "JQ",
                     "flight_number": "3123",
                     "registration": "AOTGR",
-                    "departure_day": "20"
+                    "movement_day": "20"
                 },
                 "movement_info": {
                     "type": "AD",
@@ -153,7 +153,7 @@ def load_few_shot_examples() -> List[Dict]:
                     "airline_iata": "QFA",
                     "flight_number": "5880",
                     "registration": "VIRGV",
-                    "departure_day": "22"
+                    "movement_day": "22"
                 },
                 "movement_info": {
                     "type": "AD",
