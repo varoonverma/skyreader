@@ -1,7 +1,3 @@
-"""
-LLM prompt building utilities for the SkyReader TTY Message Parser.
-"""
-from typing import Dict, Any, Optional, List
 import json
 
 from app.data.examples import load_few_shot_examples
@@ -25,14 +21,8 @@ def build_few_shot_prompt(tty_message: str) -> str:
     return prompt
 
 
-
-# Zero-shot prompt builder
 def build_zero_shot_prompt(tty_message: str) -> str:
-    """
-    Build a zero-shot prompt without few-shot examples.
-    """
     return (
-            "You are SkyReader, a parser for aviation TTY messages.\n"
-            "Parse the following message into JSON. Respond with only valid JSON.\n\n"
-            "```\n" + tty_message + "\n```\n"
+        f"Here is the raw message:\n```\n{tty_message}\n```\n\n"
+        "Respond with valid JSON only, no additional text."
     )

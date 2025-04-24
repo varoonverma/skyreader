@@ -3,6 +3,7 @@ Few-shot examples for TTY message parsing.
 """
 from typing import List, Dict
 
+
 def load_few_shot_examples() -> List[Dict]:
     """
     Load few-shot examples for TTY message parsing.
@@ -17,7 +18,7 @@ def load_few_shot_examples() -> List[Dict]:
                 "priority_code": "QU",
                 "destination_address": ["HDQOOQF"],
                 "origin_address": "QXSXMXS",
-                "message_identify": "102327",
+                "message_identity": "102327",
                 "report_indicator": "A81",
                 "flight_identification_message": {
                     "airline_iata": "JST",
@@ -46,7 +47,7 @@ def load_few_shot_examples() -> List[Dict]:
                 "priority_code": "QU",
                 "destination_address": ["HDQOOQF"],
                 "origin_address": "QXSXMXS",
-                "message_identify": "102029",
+                "message_identity": "102029",
                 "report_indicator": "A81",
                 "flight_identification_message": {
                     "airline_iata": "JST",
@@ -77,7 +78,7 @@ def load_few_shot_examples() -> List[Dict]:
                 "priority_code": "QU",
                 "destination_address": ["HDQOOQF"],
                 "origin_address": "QXSXMXS",
-                "message_identify": "102133",
+                "message_identity": "102133",
                 "report_indicator": "A80",
                 "flight_identification_message": {
                     "airline_iata": "JQ",
@@ -108,7 +109,7 @@ def load_few_shot_examples() -> List[Dict]:
                 "priority_code": "QU",
                 "destination_address": ["HDQOOQF"],
                 "origin_address": "QXSXMXS",
-                "message_identify": "102147",
+                "message_identity": "102147",
                 "report_indicator": "A80",
                 "flight_identification_message": {
                     "airline_iata": "JQ",
@@ -140,7 +141,7 @@ def load_few_shot_examples() -> List[Dict]:
                 "priority_code": "QU",
                 "destination_address": ["HDQOOQF"],
                 "origin_address": "QXSXMXS",
-                "message_identify": "102333",
+                "message_identity": "102333",
                 "report_indicator": "A80",
                 "flight_identification_message": {
                     "airline_iata": "QFA",
@@ -163,6 +164,249 @@ def load_few_shot_examples() -> List[Dict]:
                     "departure_airport_iata": "PER"
                 },
                 "supplementary_info": "SI FB 50"
+            }
+        },
+        {
+            "message": "QU HDQWWQF\n.SYDWWQF 110906\nMVT\nQFA2915/11DEC243 .VHNHY.BQB\nEA0905\nSI FILD /",
+            "parsed_json": {
+                "priority_code": "QU",
+                "destination_address": ["HDQWWQF"],
+                "origin_address": "SYDWWQF",
+                "message_identity": "110906",
+                "standard_message_id": "MVT",
+                "flight_identifier": {
+                    "airline_iata": "QFA",
+                    "flight_number": "2915",
+                    "registration": "VHNHY",
+                    "movement_day": "11"
+                },
+                "movement_info": {
+                    "type": "EA",
+                    "movement": "EstimatedArrival",
+                    "estimated_arrival_time": "09:05",
+                    "arrival_airport_iata": "BQB"
+                },
+                "supplementary_info": "SI FILD /"
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.SYDWWQF 170305\nMVT\nQFA2913/17DEC242 .VHNHY.BQB\nEA0245\nSI FILD /",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "SYDWWQF",
+                "message_identity" : "170305",
+                "standard_message_id" : "MVT",
+                "flight_identifier" : {
+                    "airline_iata" : "QFA",
+                    "flight_number" : "2913",
+                    "registration" : "VHNHY",
+                    "movement_day" : "17"
+                },
+                "movement_info" : {
+                    "type" : "EA",
+                    "movement" : "EstimatedArrival",
+                    "estimated_arrival_time" : "02:45",
+                    "arrival_airport_iata" : "BQB"
+                },
+                "supplementary_info": "SI FILD /"
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.SYDWWQF 240610\nMVT\nQFA2913/24DEC242 .VHVQQ.BQB\nEA0615\nSI FILD /",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "SYDWWQF",
+                "message_identity" : "240610",
+                "standard_message_id" : "MVT",
+                "flight_identifier" : {
+                    "airline_iata" : "QFA",
+                    "flight_number" : "2913",
+                    "registration" : "VHVQQ",
+                    "movement_day" : "24"
+                },
+                "movement_info" : {
+                    "type" : "EA",
+                    "movement" : "EstimatedArrival",
+                    "estimated_arrival_time" : "06:15",
+                    "arrival_airport_iata" : "BQB"
+                },
+                "supplementary_info": "SI FILD /"
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.HDQRMAA 261642\nMVT\nAA2911/26.XXXXX.AUS\nEA1723",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "HDQRMAA",
+                "message_identity" : "261642",
+                "standard_message_id" : "MVT",
+                "flight_identifier" : {
+                    "airline_iata" : "AA",
+                    "flight_number" : "2911",
+                    "registration" : "XXXXX",
+                    "movement_day" : "26"
+                },
+                "movement_info" : {
+                    "type" : "EA",
+                    "movement" : "EstimatedArrival",
+                    "estimated_arrival_time" : "17:23",
+                    "arrival_airport_iata" : "AUS"
+                }
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.HDQRMAA 261642\nMVT\nAA2949/26.XXXXX.MIA\nEA1739",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "HDQRMAA",
+                "message_identity" : "261642",
+                "standard_message_id" : "MVT",
+                "flight_identifier" : {
+                    "airline_iata" : "AA",
+                    "flight_number" : "2949",
+                    "registration" : "XXXXX",
+                    "movement_day" : "26"
+                },
+                "movement_info" : {
+                    "type" : "EA",
+                    "movement" : "EstimatedArrival",
+                    "estimated_arrival_time" : "17:23",
+                    "arrival_airport_iata" : "MIA"
+                }
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.SYDWWQF 120547\nMVA\nQF1620/12DEC24.VH8NZ  .PER\nAD0536/0547 EA0715 PBO\nSI UNIQUE ID OF ORIGINAL ACARS MESSAGE: LLHX224",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "SYDWWQF",
+                "message_identity" : "120547",
+                "standard_message_id" : "MVA",
+                "flight_identifier" : {
+                    "airline_iata" : "QF",
+                    "flight_number" : "1620",
+                    "registration" : "VH8NZ  ",
+                    "movement_day" : "12"
+                },
+                "movement_info" : {
+                    "type" : "AD",
+                    "movement" : "Departure",
+                    "blocks_off_time" : "05:36",
+                    "wheels_off_time" : "05:47",
+                    "estimated_arrival_time" : "07:15",
+                    "departure_airport_iata" : "PER",
+                    "arrival_airport_iata" : "PBO"
+                },
+                "supplementary_info": "SI UNIQUE ID OF ORIGINAL ACARS MESSAGE: LLHX224"
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.SYDWWQF 160406\nMVA\nQF1727/16DEC24.VH8NR  .KTA\nAD0359/0405 EA0600 PER\nSI UNIQUE ID OF ORIGINAL ACARS MESSAGE: LPHG324",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "SYDWWQF",
+                "message_identity" : "160406",
+                "standard_message_id" : "MVA",
+                "flight_identifier" : {
+                    "airline_iata" : "QF",
+                    "flight_number" : "1727",
+                    "registration" : "VH8NR  ",
+                    "movement_day" : "16"
+                },
+                "movement_info" : {
+                    "type" : "AD",
+                    "movement" : "Departure",
+                    "blocks_off_time" : "03:59",
+                    "wheels_off_time" : "04:05",
+                    "estimated_arrival_time" : "06:00",
+                    "departure_airport_iata" : "KTA",
+                    "arrival_airport_iata" : "PER"
+                },
+                "supplementary_info": "SI UNIQUE ID OF ORIGINAL ACARS MESSAGE: LPHG324"
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.SYDWWQF 170138\nMVA\nQF2763/16DEC24.VHJQG  .GYB\nAD0121/0130 EA0314 PER\nSI UNIQUE ID OF ORIGINAL ACARS MESSAGE: LQFU914",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "SYDWWQF",
+                "message_identity" : "170138",
+                "standard_message_id" : "MVA",
+                "flight_identifier" : {
+                    "airline_iata" : "QF",
+                    "flight_number" : "2763",
+                    "registration" : "VHJQG  ",
+                    "movement_day" : "16"
+                },
+                "movement_info" : {
+                    "type" : "AD",
+                    "movement" : "Departure",
+                    "blocks_off_time" : "01:21",
+                    "wheels_off_time" : "01:30",
+                    "estimated_arrival_time" : "03:14",
+                    "departure_airport_iata" : "GYB",
+                    "arrival_airport_iata" : "PER"
+                },
+                "supplementary_info": "SI UNIQUE ID OF ORIGINAL ACARS MESSAGE: LQFU914"
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.SYDWWQF 200035\nMVA\nQF2957/20DEC24.VHVQP  .OCM\nAD0024/0028 EA0157 PER\nSI UNIQUE ID OF ORIGINAL ACARS MESSAGE: LTFL574",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "SYDWWQF",
+                "message_identity" : "200035",
+                "standard_message_id" : "MVA",
+                "flight_identifier" : {
+                    "airline_iata" : "QF",
+                    "flight_number" : "2957",
+                    "registration" : "VHVQP  ",
+                    "movement_day" : "20"
+                },
+                "movement_info" : {
+                    "type" : "AD",
+                    "movement" : "Departure",
+                    "blocks_off_time" : "00:24",
+                    "wheels_off_time" : "00:28",
+                    "estimated_arrival_time" : "01:57",
+                    "departure_airport_iata" : "OCM",
+                    "arrival_airport_iata" : "PER"
+                },
+                "supplementary_info": "SI UNIQUE ID OF ORIGINAL ACARS MESSAGE: LTFL574"
+            }
+        },
+        {
+            "message" : "QU HDQWWQF\n.SYDWWQF 262338\nMVA\nQF1652/26DEC24.VH8NZ  .PER\nAD2324/2338 EA0147 BME\nSI UNIQUE ID OF ORIGINAL ACARS MESSAGE: L1ER354",
+            "parsed_json" : {
+                "priority_code" : "QU",
+                "destination_address" : [ "HDQWWQF" ],
+                "origin_address" : "SYDWWQF",
+                "message_identity" : "262338",
+                "standard_message_id" : "MVA",
+                "flight_identifier" : {
+                    "airline_iata" : "QF",
+                    "flight_number" : "1652",
+                    "registration" : "VH8NZ  ",
+                    "movement_day" : "26"
+                },
+                "movement_info" : {
+                    "type" : "AD",
+                    "movement" : "Departure",
+                    "blocks_off_time" : "23:24",
+                    "wheels_off_time" : "23:30",
+                    "estimated_arrival_time" : "01:47",
+                    "departure_airport_iata" : "PER",
+                    "arrival_airport_iata" : "BME"
+                },
+                "supplementary_info": "SI UNIQUE ID OF ORIGINAL ACARS MESSAGE: L1ER354"
             }
         }
     ]

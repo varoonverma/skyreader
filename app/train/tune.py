@@ -34,3 +34,6 @@ def main():
         model=model)
 
     print("Started fine-tune job:", job.id)
+
+if __name__ == "__main__":
+    main()

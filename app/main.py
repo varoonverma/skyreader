@@ -1,21 +1,16 @@
 # app/main.py
-import os
-import openai
 from dotenv import load_dotenv
-import uvicorn
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
 from app.api.routes import router
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    load_dotenv()
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    yield
+load_dotenv()
+app = FastAPI()
 
-app = FastAPI(lifespan=lifespan)
+# Global exception handler
+@app.exception_handler(Exception)
+async def all_exceptions(request: Request, exc: Exception):
+    return JSONResponse(status_code=502, content={"detail": str(exc)})
 
 app.include_router(router)
-
-if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
