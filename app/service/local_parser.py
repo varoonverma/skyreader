@@ -82,9 +82,10 @@ class LocalModelParser(BaseParser):
         outputs = self.model.generate(
             input_ids=inputs.input_ids,
             attention_mask=inputs.attention_mask,
-            max_new_tokens=400,  # Increase the maximum number of tokens
+            max_new_tokens=200,  # Increase the maximum number of tokens
             do_sample=False,
             early_stopping=True,
+            num_beams=1,
         )
         raw = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
@@ -120,8 +121,7 @@ class LocalModelParser(BaseParser):
 
     @staticmethod
     def _extract_json(text: str) -> str:
-        m = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
-        if m:
-            return m.group(1)
-        m2 = re.search(r"(\{.*?\})", text, re.DOTALL)
-        return m2.group(1) if m2 else ""
+        match = re.search(r'```json\s*(\{.*?\})\s*```|\{.*\}', text, re.DOTALL)
+        if match:
+            return match.group(1) if match.group(1) else match.group(0)
+        return ""
