@@ -1,0 +1,65 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "skyreader"
+version = "0.1.0"
+description = "SkyReader: Qantas TTY Message Parser using LLMs"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    {name = "Varun Verma"}
+]
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "hatch>=1.14.1",
+    "fastapi>=0.115.12",
+    "uvicorn>=0.34.2",
+    "pydantic>=2.11.3",
+    "python-dotenv>=1.1.0",
+    "openai>=1.75.0",
+    "torch>=2.7.0",
+    "transformers>=4.51.3",
+    "safetensors>=0.5.3",
+    "accelerate>=1.6.0",
+    "tokenizers>=0.21.1",
+    "datasets>=3.5.0",
+    "peft>=0.15.2"
+]
+
+[project.urls]
+"Repository" = "https://github.com/varoonverma/skyreader.git"
+
+[project.optional-dependencies]
+dev = [
+    "black>=25.1.0",
+    "isort>=6.0.1",
+    "flake8>=7.2.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.hatch.envs.default]
+dependencies = [
+    "uvicorn[standard]>=0.34.2",
+]
+
+[tool.hatch.envs.default.scripts]
+serve = "uvicorn app.main:app --reload"
+
+[tool.hatch.metadata]
+allow-direct-references = true
