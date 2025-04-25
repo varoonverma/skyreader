@@ -45,8 +45,8 @@ def make_parser(model: str, compact: bool, use_few_shots: bool = False) -> Parse
     """Factory function to create an appropriate parser based on model type"""
     if model == "openai":
         return ParserService(RemoteModelParser(model="openai"), compact=compact)
-    elif model == "finetuned":
-        return ParserService(RemoteModelParser(model="finetuned"), compact=compact)
+    elif model == "tuned_openai":
+        return ParserService(RemoteModelParser(model="tuned_openai"), compact=compact)
     elif model == "local":
         return ParserService(LocalModelParser(use_few_shots=use_few_shots), compact=compact)
     else:
