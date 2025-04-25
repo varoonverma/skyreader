@@ -19,8 +19,6 @@ logging.basicConfig(
 # Load environment variables
 load_dotenv()
 
-
-
 # Initialize application with lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,15 +42,16 @@ async def lifespan(app: FastAPI):
             logging.warning("PyTorch not available, skipping optimizations")
 
     # Initialize local model if enabled
-    if os.getenv("USE_LOCAL_MODEL", "false").lower() == "true":
-        model_path = os.getenv("LOCAL_MODEL_PATH", "microsoft/phi-2")
-        logging.info(f"Initializing local model from {model_path}")
+    if os.getenv("USE_LOCAL_MODEL").lower() == "true":
+        base_path = os.getenv("LOCAL_BASE_MODEL_PATH")
+        adapter_path = os.getenv("LORA_ADAPTER_PATH")
+        logging.info(f"Initializing LocalModelParser with base={base_path} adapter={adapter_path}")
         try:
-            LocalModelParser.initialize(model_path)
+            LocalModelParser.initialize(base_path)
             logging.info("Local model initialized successfully")
         except Exception as e:
             logging.error(f"Failed to initialize local model: {e}")
-            # Don't fail startup, as we can still use remote models
+            # continue without local
 
     yield  # App runs here
 
