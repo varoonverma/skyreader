@@ -28,6 +28,9 @@ tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
 if tokenizer.eos_token is None:
     tokenizer.add_special_tokens({'eos_token': '</s>'})
 
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
+
 for ex in examples:
     prompt = f"{instruction}\nMessage:\n{ex['message']}\nOutput:"
     completion = json.dumps(ex['parsed_json'])
