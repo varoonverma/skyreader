@@ -1,10 +1,14 @@
 # app/service/remote_parser.py
 import logging
+
 import openai
-from app.service.prompt_builder import build_zero_shot_prompt
+from app.exception.exceptions import RemoteModelError
+
 from app.service.base_parser import BaseParser
+from app.service.prompt_builder import build_zero_shot_prompt
 
 SYSTEM_INSTRUCTION = "Parse IATA Type B messages into structured JSON according to AHM specification."
+
 class RemoteModelParser(BaseParser):
     """Parser that uses a remote LLM to parse IATA Type B messages"""
 
@@ -23,7 +27,6 @@ class RemoteModelParser(BaseParser):
         ]
         logging.info("Calling fine-tuned model %s with TTY message", self.model_id)
         try:
-
             resp = openai.chat.completions.create(
                 model=self.model_id,
                 messages=messages,
@@ -31,8 +34,12 @@ class RemoteModelParser(BaseParser):
             )
         except openai.OpenAIError as e:
             logging.error("OpenAI API error", exc_info=True)
-            raise
-        # Pull out the assistant’s reply
+            raise RemoteModelError(f"OpenAI API error: {str(e)}")
+        except Exception as e:
+            logging.error("Unexpected error calling OpenAI API", exc_info=True)
+            raise RemoteModelError(f"Unexpected error: {str(e)}")
+
+        # Pull out the assistant's reply
         assistant_msg = resp.choices[0].message.content
 
         # Return everything so the caller can post-process

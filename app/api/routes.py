@@ -2,7 +2,8 @@ from typing import List
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-
+import asyncio
+import logging
 from app.service.parser import ParserService
 from app.service.remote_parser import RemoteModelParser
 
@@ -38,23 +39,35 @@ def make_parser(model: str, compact: bool) -> ParserService:
     return ParserService(RemoteModelParser(model=model), compact=compact)
 
 @router.post("/parse", response_model=ParseResponse)
-async def parse_endpoint(req: ParseRequest):
-    # 1) configure a fresh RemoteModelParser & ParserService per call
+async def parse_message_async(req: ParseRequest) -> ParseResponse:
+    """Process a single message asynchronously"""
     parser = make_parser(req.model, compact=req.compact)
-
     result = parser.parse_tty_message(req.message)
-
     return ParseResponse(message_id=req.message_id, parsed=result)
 
 @router.post("/parse/batch", response_model=BatchParseResponse)
 async def parse_batch(req: BatchParseRequest):
-    responses: List[ParseResponse] = []
+    """Process multiple messages concurrently"""
+    # Create tasks for each message
+    tasks = [parse_message_async(item) for item in req.items]
 
-    for req in req.items:
-        parser = make_parser(req.model, compact=req.compact)
+    # Execute all tasks concurrently
+    responses = await asyncio.gather(*tasks, return_exceptions=True)
 
-        result = parser.parse_tty_message(req.message)
+    # Handle any exceptions that occurred
+    processed_responses = []
+    for i, response in enumerate(responses):
+        if isinstance(response, Exception):
+            # Log the error
+            logging.error(f"Error processing message {req.items[i].message_id}: {str(response)}")
+            # Create an error response
+            processed_responses.append(
+                ParseResponse(
+                    message_id=req.items[i].message_id,
+                    parsed={"error": str(response)}
+                )
+            )
+        else:
+            processed_responses.append(response)
 
-        responses.append(ParseResponse(message_id=req.message_id, parsed=result))
-
-    return BatchParseResponse(responses=responses)
+    return BatchParseResponse(responses=processed_responses)
