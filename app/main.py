@@ -1,91 +1,85 @@
-# app/main.py
 import logging
-from dotenv import load_dotenv
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
 import os
 from contextlib import asynccontextmanager
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from app.api.routes import router
 from app.exception.exceptions import SkyReaderError
 from app.service.local_parser import LocalModelParser
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
 )
 
-# Load environment variables
+# Load .env
 load_dotenv()
 
-# Initialize application with lifespan
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: initialize resources
-    logging.info("Starting SkyReader API")
+    logging.info("🛫 Starting SkyReader API")
 
-    # Configure PyTorch for performance
-    if os.getenv("OPTIMIZE_TORCH").lower() == "true":
+    # Optional torch optimizations
+    if os.getenv("OPTIMIZE_TORCH", "false").lower() == "true":
         try:
             import torch
-            logging.info("Optimizing PyTorch settings")
-            # Set threading options for better CPU performance
+
+            logging.info("🔧 Applying PyTorch performance tweaks")
             torch.set_num_threads(int(os.getenv("TORCH_NUM_THREADS", "4")))
-            # Enable TF32 for faster computation on NVIDIA GPUs that support it
-            if hasattr(torch.backends, 'cuda') and hasattr(torch.backends.cuda, 'matmul'):
+            if hasattr(torch.backends, "cuda"):
                 torch.backends.cuda.matmul.allow_tf32 = True
-            if hasattr(torch.backends, 'cudnn'):
+            if hasattr(torch.backends, "cudnn"):
                 torch.backends.cudnn.allow_tf32 = True
                 torch.backends.cudnn.benchmark = True
         except ImportError:
-            logging.warning("PyTorch not available, skipping optimizations")
+            logging.warning("⚠️ PyTorch not installed; skipping optimizations")
 
-    # Initialize local model if enabled
-    if os.getenv("USE_LOCAL_MODEL").lower() == "true":
-        base_path = os.getenv("LOCAL_BASE_MODEL_PATH")
-        adapter_path = os.getenv("LORA_ADAPTER_PATH")
-        logging.info(f"Initializing LocalModelParser with base={base_path} adapter={adapter_path}")
+    # Initialize local LLM if requested
+    if os.getenv("USE_LOCAL_MODEL", "false").lower() == "true":
+        base = os.getenv("LOCAL_BASE_MODEL_PATH")
+        logging.info(f"📥 Initializing LocalModelParser(base={base})")
         try:
-            LocalModelParser.initialize(base_path)
-            logging.info("Local model initialized successfully")
+            LocalModelParser.initialize(base_model_path=base)
+            logging.info("✅ Local model initialized")
         except Exception as e:
-            logging.error(f"Failed to initialize local model: {e}")
-            # continue without local
+            logging.error("❌ Local model failed to initialize: %s", e)
 
-    yield  # App runs here
+    yield
 
-    # Shutdown: cleanup resources
-    logging.info("Shutting down SkyReader API")
+    logging.info("🛬 Shutting down SkyReader API")
+
 
 app = FastAPI(
     title="SkyReader API",
-    description="Parser for IATA Type B aviation messages",
-    lifespan=lifespan
+    description="Parse IATA Type B (MVT/MVA/DIV) messages into JSON",
+    lifespan=lifespan,
 )
 
-# Custom exception handlers
+
 @app.exception_handler(SkyReaderError)
-async def skyreader_exception_handler(request: Request, exc: SkyReaderError):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=exc.to_dict(),
-    )
+async def skyreader_error(request: Request, exc: SkyReaderError):
+    return JSONResponse(status_code=exc.status_code, content=exc.to_dict())
+
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_error(request: Request, exc: RequestValidationError):
     return JSONResponse(
         status_code=400,
-        content={"detail": "Invalid request parameters", "errors": exc.errors()},
+        content={"detail": "Invalid request", "errors": exc.errors()},
     )
 
-# Global exception handler for unexpected errors
+
 @app.exception_handler(Exception)
 async def all_exceptions(request: Request, exc: Exception):
     return JSONResponse(
-        status_code=500,
-        content={"detail": f"An unexpected error occurred: {str(exc)}"},
+        status_code=500, content={"detail": f"Unexpected error: {exc}"}
     )
 
-# Include API routes
+
 app.include_router(router)
