@@ -82,36 +82,41 @@ class LocalModelParser(BaseParser):
         outputs = self.model.generate(
             input_ids=inputs.input_ids,
             attention_mask=inputs.attention_mask,
-            max_new_tokens=200,
+            max_new_tokens=400,  # Increase the maximum number of tokens
             do_sample=False,
             early_stopping=True,
         )
         raw = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-        json_txt = self._extract_json(raw)
-
-        if not json_txt:
-            logging.warning("No JSON found; attempting to parse raw text")
-            try:
-                obj = json.loads(raw)
-                pretty = json.dumps(obj, indent=2)
-            except json.JSONDecodeError:
-                logging.warning("Invalid JSON in raw text; returning raw output")
-                pretty = raw
-        else:
+        # Extract JSON from the raw output
+        json_matches = re.findall(r'\{.*\}', raw, re.DOTALL)
+        if json_matches:
+            json_txt = max(json_matches, key=len)  # Get the longest JSON match
             try:
                 obj = json.loads(json_txt)
                 pretty = json.dumps(obj, indent=2)
             except json.JSONDecodeError:
-                logging.warning("Invalid JSON found; attempting to parse raw text")
+                logging.warning("Invalid JSON found; attempting to fix")
+                json_txt = self._fix_json(json_txt)
                 try:
-                    obj = json.loads(raw)
+                    obj = json.loads(json_txt)
                     pretty = json.dumps(obj, indent=2)
                 except json.JSONDecodeError:
-                    logging.warning("Invalid JSON in raw text; returning raw output")
+                    logging.warning("Could not fix JSON; returning raw output")
                     pretty = raw
+        else:
+            logging.warning("No JSON found in the output; returning raw output")
+            pretty = raw
 
         return {"choices": [{"message": {"content": pretty}}]}
+
+    @staticmethod
+    def _fix_json(json_str: str) -> str:
+        # Attempt to fix common JSON errors
+        json_str = json_str.replace("'", '"')  # Replace single quotes with double quotes
+        json_str = re.sub(r'(\w+):', r'"\1":', json_str)  # Add quotes around keys
+        json_str = re.sub(r',\s*\}', '}', json_str)  # Remove trailing commas
+        return json_str
 
     @staticmethod
     def _extract_json(text: str) -> str:

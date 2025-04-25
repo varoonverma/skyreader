@@ -33,8 +33,8 @@ class ParserService:
     #     # Replace the original choices with enriched ones
     #     resp_dict["choices"] = parsed_choices
     #     resp_dict_compact = resp_dict["choices"][0]["parsed_json"]
-
-        # return resp_dict_compact if self.compact else resp_dict
+    #
+    #     return resp_dict_compact if self.compact else resp_dict
 
     def parse_tty_message(self, message: str) -> Dict[str, Any]:
         # actual call into your parser implementation
