@@ -1,46 +1,28 @@
-# app/service/parser.py
-import json
 import re
-
-from app.service.base_parser import BaseParser
-from typing import Any, Dict
+import json
 
 class ParserService:
-    def __init__(
-            self,
-            impl: BaseParser,
-            compact: bool = True
-    ):
+    def __init__(self, impl, compact=False):
         self.impl = impl
         self.compact = compact
 
-    # def parse_tty_message(self, message: str) -> dict:
-    #     resp_dict = self.impl.parse_tty_message(message)
-    #
-    #     # Enhance each choice with parsed JSON content
-    #     parsed_choices = []
-    #     for choice in resp_dict["choices"]:
-    #         raw = choice["message"]["content"]
-    #         match = re.search(r'```json\s*(\{.*\})\s*```', raw, re.DOTALL)
-    #         json_text = match.group(1) if match else raw
-    #         try:
-    #             parsed_obj = json.loads(json_text)
-    #         except json.JSONDecodeError:
-    #             parsed_obj = {"raw_content": raw}
-    #             # attach parsed JSON to this choice
-    #         choice["parsed_json"] = parsed_obj
-    #         parsed_choices.append(choice)
-    #     # Replace the original choices with enriched ones
-    #     resp_dict["choices"] = parsed_choices
-    #     resp_dict_compact = resp_dict["choices"][0]["parsed_json"]
-    #
-    #     return resp_dict_compact if self.compact else resp_dict
+    def parse_tty_message(self, message: str) -> dict:
+        resp_dict = self.impl.parse_tty_message(message)
 
-    def parse_tty_message(self, message: str) -> Dict[str, Any]:
-        # actual call into your parser implementation
-        resp = self.impl.parse_tty_message(message)
+        content_text = resp_dict["choices"][0]["message"]["content"]
 
-        if self.compact:
-            # unwrap the first choice's JSON
-            return resp["choices"][0]["parsed_json"]
-        return resp
+        try:
+            # Try normal load first
+            parsed_once = json.loads(content_text)
+            content_json = json.loads(parsed_once) if isinstance(parsed_once, str) else parsed_once
+
+        except json.JSONDecodeError as e:
+            # Handle double-JSON with multiple top-level objects
+            try:
+                decoder = json.JSONDecoder()
+                content_json, idx = decoder.raw_decode(content_text)
+            except Exception as inner_e:
+                raise ValueError(f"Failed to parse content: {inner_e}") from e
+
+        resp_dict["choices"] = content_json
+        return resp_dict
