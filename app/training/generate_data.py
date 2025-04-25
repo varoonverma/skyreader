@@ -3,7 +3,7 @@ import json
 
 import tiktoken
 
-from app.data.examples import load_few_shot_examples
+from app.examples.examples import load_few_shot_examples
 
 # Configuration
 OUTPUT_JSONL = "training.jsonl"

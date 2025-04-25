@@ -8,8 +8,8 @@ from typing import Any, Dict
 from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 
-from app.service.base_parser import BaseParser
-from app.service.prompt_builder import build_zero_shot_prompt, build_few_shot_prompt
+from app.parser.base import BaseParser
+from app.examples.prompt_builder import build_zero_shot_prompt, build_few_shot_prompt
 
 class LocalModelParser(BaseParser):
     _model_instance = None

@@ -2,10 +2,10 @@
 import logging
 
 import openai
-from app.exception.exceptions import RemoteModelError
+from app.exceptions import RemoteModelError
 
-from app.service.base_parser import BaseParser
-from app.service.prompt_builder import build_zero_shot_prompt
+from app.parser.base import BaseParser
+from app.examples.prompt_builder import build_zero_shot_prompt
 
 SYSTEM_INSTRUCTION = "Parse IATA Type B messages into structured JSON according to AHM specification."
 

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "skyreader"
 version = "0.1.0"
-description = "SkyReader: Qantas TTY Message Parser using LLMs"
+description = "SkyReader: TTY Message Parser using LLMs"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [

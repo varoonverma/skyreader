@@ -11,7 +11,7 @@ SYSTEM_INSTRUCTION = (
 # Load your five-shot examples (adjust path if needed)
 # examples.py should export a list called `EXAMPLES`
 # where each entry is: {"message": "...", "parsed_json": { ... }}
-from app.data.examples import load_few_shot_examples  # e.g. [{"message": "...", "parsed_json": {...}}, ...]
+from app.examples.examples import load_few_shot_examples  # e.g. [{"message": "...", "parsed_json": {...}}, ...]
 
 def build_zero_shot_prompt(msg: str) -> str:
     """

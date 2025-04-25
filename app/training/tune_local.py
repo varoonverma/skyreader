@@ -12,7 +12,7 @@ from transformers import (
 from peft import LoraConfig, get_peft_model, get_peft_model_state_dict
 import torch
 
-from app.data.examples import load_few_shot_examples
+from app.examples.examples import load_few_shot_examples
 
 examples = load_few_shot_examples()
 

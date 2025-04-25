@@ -1,6 +1,6 @@
 import tiktoken
 from PyPDF2 import PdfReader
-from app.data.examples import load_few_shot_examples
+from app.examples.examples import load_few_shot_examples
 import json
 
 # 1) Extract all text from the PDF

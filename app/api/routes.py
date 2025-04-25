@@ -4,10 +4,10 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 import asyncio
 import logging
-from app.service.parser import ParserService
-from app.service.remote_parser import RemoteModelParser
-from app.service.local_parser import LocalModelParser
-from app.exception.exceptions import ParserConfigError
+from app.parser.parser import ParserService
+from app.parser.remote import RemoteModelParser
+from app.parser.local import LocalModelParser
+from app.exceptions import ParserConfigError
 
 router = APIRouter()
 

@@ -8,8 +8,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.routes import router
-from app.exception.exceptions import SkyReaderError
-from app.service.local_parser import LocalModelParser
+from app.exceptions import SkyReaderError
+from app.parser.local import LocalModelParser
 
 # Configure logging
 logging.basicConfig(
