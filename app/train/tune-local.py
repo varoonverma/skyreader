@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # app/train/tune-local.py
 
@@ -75,7 +74,17 @@ base_model = AutoModelForCausalLM.from_pretrained(
 )
 model = get_peft_model(base_model, lora_config)
 
-# 8. Training arguments
+# ——— Here’s the key fix for mixed precision ———
+device_type = (
+    "cuda" if torch.cuda.is_available()
+    else "mps" if torch.backends.mps.is_available()
+    else "cpu"
+)
+use_fp16 = device_type == "cuda"
+use_bf16 = device_type == "mps"
+print(f"⚙️ Training on {device_type}, fp16={use_fp16}, bf16={use_bf16}")
+
+# 7. Training arguments
 training_args = TrainingArguments(
     output_dir="./lora_tuned",
     learning_rate=1e-4,
@@ -83,7 +92,8 @@ training_args = TrainingArguments(
     num_train_epochs=3,
     save_total_limit=1,
     logging_steps=10,
-    fp16=True,
+    fp16=use_fp16,    # only on CUDA
+    bf16=use_bf16,    # on MPS use bfloat16
 )
 
 # 9. Trainer setup
@@ -102,4 +112,4 @@ if __name__ == "__main__":
     # Optionally save only the adapter weights
     state_dict = get_peft_model_state_dict(model)
     torch.save(state_dict, "./lora_tuned/adapter_state.pt")
-    print("Local LLaMA model tuned with LoRA. Few-shot logic baked in.")
+    print("✅ Local LLaMA model tuned with LoRA. Few-shot logic baked into the adapter.")
