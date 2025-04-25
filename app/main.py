@@ -27,9 +27,25 @@ async def lifespan(app: FastAPI):
     # Startup: initialize resources
     logging.info("Starting SkyReader API")
 
+    # Configure PyTorch for performance
+    if os.getenv("OPTIMIZE_TORCH").lower() == "true":
+        try:
+            import torch
+            logging.info("Optimizing PyTorch settings")
+            # Set threading options for better CPU performance
+            torch.set_num_threads(int(os.getenv("TORCH_NUM_THREADS", "4")))
+            # Enable TF32 for faster computation on NVIDIA GPUs that support it
+            if hasattr(torch.backends, 'cuda') and hasattr(torch.backends.cuda, 'matmul'):
+                torch.backends.cuda.matmul.allow_tf32 = True
+            if hasattr(torch.backends, 'cudnn'):
+                torch.backends.cudnn.allow_tf32 = True
+                torch.backends.cudnn.benchmark = True
+        except ImportError:
+            logging.warning("PyTorch not available, skipping optimizations")
+
     # Initialize local model if enabled
-    if os.getenv("USE_LOCAL_MODEL").lower() == "true":
-        model_path = os.getenv("LOCAL_MODEL_PATH")
+    if os.getenv("USE_LOCAL_MODEL", "false").lower() == "true":
+        model_path = os.getenv("LOCAL_MODEL_PATH", "microsoft/phi-2")
         logging.info(f"Initializing local model from {model_path}")
         try:
             LocalModelParser.initialize(model_path)

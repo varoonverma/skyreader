@@ -1,163 +1,204 @@
 # app/service/local_parser.py
 
-import torch
+import os
+import uuid
 import re
 import json
 import logging
-from typing import Dict, Any
-import os
+import torch
 
+from typing import Dict, Any
+from transformers import (
+    AutoConfig,
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    BitsAndBytesConfig,
+)
 from app.service.base_parser import BaseParser
 from app.service.prompt_builder import build_few_shot_prompt, build_zero_shot_prompt
 from app.exception.exceptions import RemoteModelError
 
-class LocalModelParser(BaseParser):
-    """Parser that uses a local LLM to parse IATA Type B messages"""
+SYSTEM_INSTRUCTION = (
+    "Parse IATA Type B messages into structured JSON according to AHM specification."
+)
 
-    # Class variable to hold the loaded model instance
+
+class LocalModelParser(BaseParser):
+    """Parser that uses a local LLM to parse IATA Type B messages."""
+
     _model_instance = None
     _tokenizer_instance = None
 
     @classmethod
-    def initialize(cls, model_name_or_path="microsoft/phi-2"):
+    def initialize(
+            cls,
+            model_name_or_path: str,
+            max_length: int = 8192,
+    ):
         """
-        Initialize the model and tokenizer at application startup
-
-        Args:
-            model_name_or_path: Can be a HuggingFace model ID or local path
-                                Default is microsoft/phi-2 which works well with tokenizers
+        Load (and cache) the model and tokenizer with extended context length.
         """
         try:
-            from transformers import AutoModelForCausalLM, AutoTokenizer
+            # 1) Load and patch config for longer context
+            config = AutoConfig.from_pretrained(model_name_or_path)
+            config.max_position_embeddings = max_length
+            if hasattr(config, "n_positions"):
+                config.n_positions = max_length
+            if hasattr(config, "n_ctx"):
+                config.n_ctx = max_length
+            logging.info("Set model context length to %d", max_length)
 
-            logging.info(f"Loading tokenizer from {model_name_or_path}")
+            # 2) Load tokenizer
             cls._tokenizer_instance = AutoTokenizer.from_pretrained(
                 model_name_or_path,
-                use_fast=True,  # Use fast tokenizer (based on tokenizers library)
+                use_fast=True,
+                model_max_length=max_length,
+                padding_side="right",
+                truncation_side="right",
             )
-
-            # Set padding token if needed
+            # ensure pad token
             if cls._tokenizer_instance.pad_token is None:
                 cls._tokenizer_instance.pad_token = cls._tokenizer_instance.eos_token
 
-            logging.info(f"Loading model from {model_name_or_path}")
-            # Configure device placement based on available hardware
+            logging.info("Loading model from %s", model_name_or_path)
+
+            # 3) Prepare model kwargs
             device_map = "auto"
             torch_dtype = torch.float16
-
-            # For smaller or less capable devices, use more conservative settings
             if os.environ.get("LOW_MEMORY", "false").lower() == "true":
-                device_map = {"": 0}  # Place on first GPU only
-                torch_dtype = torch.float32  # Use regular precision if memory limited
+                device_map = {"": 0}
+                torch_dtype = torch.float32
+
+            model_kwargs: Dict[str, Any] = {
+                "config": config,
+                "torch_dtype": torch_dtype,
+                "device_map": device_map,
+                "low_cpu_mem_usage": True,
+                "use_safetensors": True,
+            }
+
+            # 4) Optional 4-bit quantization
+            if os.environ.get("USE_QUANTIZATION", "false").lower() == "true":
+                try:
+                    logging.info("Enabling 4-bit quantization")
+                    model_kwargs["quantization_config"] = BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_compute_dtype=torch.float32,
+                        bnb_4bit_use_double_quant=True,
+                        bnb_4bit_quant_type="nf4",
+                        bnb_4bit_cpu_offload=True,
+                    )
+                except ImportError:
+                    logging.warning("bitsandbytes not installed, skipping quantization")
 
             cls._model_instance = AutoModelForCausalLM.from_pretrained(
                 model_name_or_path,
-                torch_dtype=torch_dtype,
-                device_map=device_map,
-                use_safetensors=True,
-                low_cpu_mem_usage=True,
+                **model_kwargs,
             )
-            logging.info("Model loaded successfully")
+            logging.info("Local model loaded successfully")
 
         except Exception as e:
-            logging.error(f"Failed to initialize local model: {str(e)}", exc_info=True)
+            logging.error("Failed to initialize local model: %s", e, exc_info=True)
             raise
 
-    def __init__(self, model_name_or_path="microsoft/phi-2", use_few_shots: bool = False):
+    def __init__(
+            self,
+            model_name_or_path: str = None,
+            use_few_shots: bool = False,
+    ):
         """
-        Initialize parser with reference to the shared model
-
-        Args:
-            model_name_or_path: HuggingFace model ID or path (used only if model isn't already loaded)
-            use_few_shots: Whether to use few-shot examples in prompts
+        :param model_name_or_path: HuggingFace ID or local path. If omitted, env var LOCAL_MODEL_PATH is used.
+        :param use_few_shots:      Whether to include few-shot examples in the prompt.
         """
-        # If model not loaded yet, load it
+        path = model_name_or_path or os.environ.get("LOCAL_MODEL_PATH")
         if LocalModelParser._model_instance is None or LocalModelParser._tokenizer_instance is None:
-            logging.warning("Model not pre-loaded, loading now - this may cause delay")
-            LocalModelParser.initialize(model_name_or_path)
+            logging.warning("Local model not yet initialized; loading now...")
+            LocalModelParser.initialize(path)
 
         self.model = LocalModelParser._model_instance
         self.tokenizer = LocalModelParser._tokenizer_instance
         self.use_few_shots = use_few_shots
+        # choose device
+        if torch.backends.mps.is_available():
+            self.device = "mps"
+        elif torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
 
     def parse_tty_message(self, tty_message: str) -> Dict[str, Any]:
-        """Parse a TTY message using the local model"""
+        """
+        Tokenizes the prompt, generates with the local model, extracts JSON, and returns
+        in the same structure as the remote parser (with choices + parsed_json).
+        """
         try:
-            # Get appropriate prompt
-            prompt = build_few_shot_prompt(tty_message) if self.use_few_shots else build_zero_shot_prompt(tty_message)
+            # 1) Build prompt (includes SYSTEM_INSTRUCTION internally)
+            prompt = (
+                build_few_shot_prompt(tty_message)
+                if self.use_few_shots
+                else build_zero_shot_prompt(tty_message)
+            )
 
-            # Create system message prefix for better instruction following
-            system_msg = "Parse IATA Type B messages into structured JSON according to AHM specification."
-            full_prompt = f"{system_msg}\n\n{prompt}"
+            # 2) Tokenize and move to device
+            inputs = self.tokenizer(
+                prompt,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=self.tokenizer.model_max_length,
+            ).to(self.device)
 
-            # Tokenize input
-            inputs = self.tokenizer(full_prompt, return_tensors="pt").to(self.model.device)
-
-            # Generate response
+            # 3) Generate output (no grad, greedy, fixed-length)
             with torch.no_grad():
                 outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=1024,
-                    do_sample=False,
-                    temperature=0.1,
-                    repetition_penalty=1.1
+                    input_ids=inputs.input_ids,
+                    attention_mask=inputs.attention_mask,
+                    max_new_tokens=256,       # cap to a few hundred tokens
+                    do_sample=False,          # greedy
+                    pad_token_id=self.tokenizer.eos_token_id,
                 )
 
-            # Decode response
-            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            # 4) Decode only the newly generated tokens
+            gen_ids = outputs[0][ inputs.input_ids.shape[-1] : ]
+            raw_response = self.tokenizer.decode(gen_ids, skip_special_tokens=True).strip()
 
-            # Extract model's reply (remove the prompt)
-            response = response[len(full_prompt):].strip()
-
-            # Generate a unique ID for this response
-            import uuid
-            response_id = str(uuid.uuid4())
-
-            # Extract JSON from response
+            # 5) Extract JSON block
+            json_text = self._extract_json_from_text(raw_response)
             try:
-                json_text = self._extract_json_from_text(response)
-                parsed_obj = json.loads(json_text)
-            except (json.JSONDecodeError, ValueError) as e:
-                logging.error(f"Failed to parse JSON from model response: {str(e)}")
-                parsed_obj = {"error": "Failed to parse valid JSON", "raw_response": response}
+                parsed = json.loads(json_text)
+            except json.JSONDecodeError:
+                raise ValueError("Invalid JSON received from local model")
 
-            # Return in the same format as the OpenAI implementation
+            # 6) Wrap into choices structure
+            response_id = str(uuid.uuid4())
+            usage = {
+                "prompt_tokens": inputs.input_ids.shape[-1],
+                "completion_tokens": gen_ids.shape[-1],
+                "total_tokens": outputs.shape[-1],
+            }
+
             return {
                 "message_id": response_id,
-                "usage": {
-                    "prompt_tokens": inputs.input_ids.shape[1],
-                    "completion_tokens": outputs.shape[1] - inputs.input_ids.shape[1],
-                    "total_tokens": outputs.shape[1]
-                },
+                "usage": usage,
                 "choices": [
                     {
                         "index": 0,
-                        "message": {
-                            "role": "assistant",
-                            "content": response
-                        },
+                        "message": {"role": "assistant", "content": raw_response},
                         "finish_reason": "stop",
-                        "parsed_json": parsed_obj
+                        "parsed_json": parsed,
                     }
-                ]
+                ],
             }
 
         except Exception as e:
-            logging.error(f"Error in local model parsing: {str(e)}", exc_info=True)
-            raise RemoteModelError(f"Local model error: {str(e)}")
+            logging.error("Error in local_parser: %s", e, exc_info=True)
+            raise RemoteModelError(f"Local model error: {e}")
 
     def _extract_json_from_text(self, text: str) -> str:
-        """Extract JSON from model response text"""
-        # Try to extract JSON from markdown code block
-        code_block_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
-        if code_block_match:
-            return code_block_match.group(1)
-
-        # Try to find JSON object with curly braces
-        json_object_match = re.search(r'(\{.*\})', text, re.DOTALL)
-        if json_object_match:
-            return json_object_match.group(1)
-
-        # If no JSON pattern found, return the raw text
-        # (this will likely fail to parse as JSON)
-        return text
+        # try fenced code block
+        m = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
+        if m:
+            return m.group(1)
+        # try first {...}
+        m = re.search(r'(\{.*\})', text, re.DOTALL)
+        return m.group(1) if m else text
