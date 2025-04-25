@@ -17,11 +17,17 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "hatch>=1.14.1",
     "fastapi>=0.115.12",
     "uvicorn>=0.34.2",
     "pydantic>=2.11.3",
     "python-dotenv>=1.1.0",
-    "openai>=1.75.0"
+    "openai>=1.75.0",
+    "torch>=2.7.0",
+    "transformers>=4.51.3",
+    "safetensors>=0.5.3",
+    "accelerate>=1.6.0",
+    "tokenizers>=0.21.1",
 ]
 
 [project.urls]
@@ -37,7 +43,6 @@ dev = [
 [tool.black]
 line-length = 88
 target-version = ["py313"]
-include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
@@ -45,11 +50,14 @@ line_length = 88
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
 [tool.hatch.envs.default]
 dependencies = [
     "uvicorn[standard]>=0.34.2",
 ]
+
 [tool.hatch.envs.default.scripts]
 serve = "uvicorn app.main:app --reload"
+
 [tool.hatch.metadata]
 allow-direct-references = true
